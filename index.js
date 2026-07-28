@@ -19,39 +19,47 @@ function renderTodos() {
     const li = document.createElement('li');
     if (todo.completed) li.classList.add('completed');
  
- li.innerHTML = `
- <input type=checkbox"  ${todo.completed ? 'checked' : ''} data -id="${todo.id}">
- < span class="todo-text">${todo.text}</span>
- <button class="delete-btn" data-id="${todo.id}">X</button>
- `;
+    li.innerHTML = `
+      <input type="checkbox" ${todo.completed ? 'checked' : ''} data-id="${todo.id}">
+      <span class="todo-text">${escapeHtml(todo.text)}</span>
+      <button class="delete-btn" data-id="${todo.id}">X</button>
+    `;
 
  todoList.appendChild(li);
     });
-    //UPDATE THE FOOTER STAT
+    // UPDATE THE FOOTER STAT
     const activeCount = todos.filter((t) => !t.completed).length;
-    taskCount.textContent(`$ {activeCount} tasks${activeCount === 1 ? '': 's'} left`)
+    taskCount.textContent = `${activeCount} task${activeCount === 1 ? '' : 's'} left`;
 
 
 }
 // ACTIONS
-const addTodo = () => {
-  const newTodo ={
-    id: Data.now(),
+const addTodo = (text) => {
+  const newTodo = {
+    id: Date.now(),
     text: text.trim(),
-    completed: false //boolean
+    completed: false
   };
-todo.push(newTodo);
-}
+  todos.push(newTodo);
+  localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodos();
+  updateTaskCount();
+};
 //HELPER FOR HTML INJECTION ATTACKS
 function escapeHtml(str){
   return str.replace(/&/g,'&amp;').replace(/>/g,'&gt;');
 
 }
+function updateTaskCount() {
+    taskCount.textContent = `Total Tasks: ${todos.length}`;
+}
 
+renderTodos();
+updateTaskCount();
 //EVENT LISTENERS
 todoForm.addEventListener('submit', (e) =>{
   e.preventDefault();
-  if (!todoInput.ariaValueMax.trim()) return;
+  if (!todoInput.value.trim()) return;
   addTodo(todoInput.value);
   // todoInput.value = '';
 });
@@ -66,24 +74,54 @@ todoList.addEventListener('click', (e) => {
     deleteTodo(id);
   }
 });
-//ACTIONS = C, R, U, D
-const addTodo = () => {-
-} 
+// ACTIONS = C, R, U, D
 const toggleTodo = (id) => {
-  todos =todos.map((todo) => todo.id === id ? {...todo, complete: !todo.completed }  : todo);
+  todos = todos.map((todo) =>
+    todo.id === id ? { ...todo, completed: !todo.completed } : todo
+  );
+  localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodos();
+  updateTaskCount();
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  // Paste your Firebase config here
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function saveTask(task) {
+  await addDoc(collection(db, "tasks"), {
+    text: task,
+    completed: false
+  });
 }
-//clearBtn.addEventListener('click', () => {
+
+async function loadTasks() {
+  const querySnapshot = await getDocs(collection(db, "tasks"));
+
+  querySnapshot.forEach((doc) => {
+    console.log(doc.id, doc.data());
+  });
+}
+
+loadTasks();
+
+// Clear Completed
+clearBtn.addEventListener('click', () => {
   todos = todos.filter(todo => !todo.completed);
   localStorage.setItem('todos', JSON.stringify(todos));
   renderTodos();
-;
-// Clear Completed (Contains a Bug)
-clearBtn.addEventListener("click", () => {
-  // BUG: This keeps only completed tasks instead of removing them.
-  todos = todos.filter(todo => todo.completed);
-
-  localStorage.setItem("todos", JSON.stringify(todos));
-  renderTodos();
+  updateTaskCount();
 });
 
 
