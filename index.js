@@ -21,4 +21,17 @@ function renderTodos() {
   });
 }
 
+//clearBtn.addEventListener('click', () => {
+  todos = todos.filter(todo => !todo.completed);
+  localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodos();
+;
+// Clear Completed (Contains a Bug)
+clearBtn.addEventListener("click", () => {
+  // BUG: This keeps only completed tasks instead of removing them.
+  todos = todos.filter(todo => todo.completed);
+
+  localStorage.setItem("todos", JSON.stringify(todos));
+  renderTodos();
+});
 // renderTodos()
